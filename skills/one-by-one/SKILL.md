@@ -11,8 +11,15 @@ decides each item. You apply only what the user approves.
 ## 1. Collect and list
 
 Collect the items from the source the user names: review comments, a report,
-findings, or a document. Show a numbered list with a one-line summary of each
-item. Group related items when one change addresses both, and say so.
+findings, or a document.
+
+If the user names no source (for example, they only invoke the skill), use
+your own latest message in the conversation as the source. Take the items,
+findings, or proposals from it. If that message contains no items to decide,
+ask the user what to work through.
+
+Show a numbered list with a one-line summary of each item. Group related items
+when one change addresses both, and say so.
 
 Do not start on an item yet. Suggest an order (largest impact first, or
 dependencies first) and start when the user agrees.
