@@ -8,6 +8,7 @@ folder with a `SKILL.md` file that tells the agent when and how to do a task.
 | Skill | Description |
 |---|---|
 | [one-by-one](skills/one-by-one/SKILL.md) | Work through a list of items one at a time. For each item, give context, a preview, and an opinion, and agree with the user before applying anything. |
+| [implicit-state-machines](skills/implicit-state-machines/SKILL.md) | Find flags that together encode one state, check them for bugs, and triage each one: fix now, open an issue, or leave it. |
 
 ## Install
 
@@ -68,11 +69,17 @@ matches its description.
 ```text
 skills/
 └── <skill-name>/
-    └── SKILL.md      # frontmatter (name, description) and instructions
+    ├── SKILL.md      # frontmatter (name, description) and instructions
+    └── references/   # optional files that SKILL.md points to
 ```
 
 To add a skill, create a folder under `skills/` with a `SKILL.md`, and add a
 row to the table above.
+
+## Credits
+
+- `implicit-state-machines`: inspired by
+  [a post by @Voxyz_ai](https://x.com/Voxyz_ai/status/2119444845890617507).
 
 ## License
 
