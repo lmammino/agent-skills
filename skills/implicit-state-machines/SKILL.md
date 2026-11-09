@@ -1,6 +1,6 @@
 ---
 name: implicit-state-machines
-description: Find implicit state machines (groups of booleans, nullables or strings that together encode one state), check them for bugs with concrete failure scenarios, and triage each one (fix now, open an issue, or leave). Reports first; issues and fixes only on request. Use when the user asks for implicit state machines, a state audit, flag soup, boolean explosion, impossible or invalid state combinations, "make illegal states unrepresentable", or replacing booleans with enums or sealed types.
+description: Find implicit state machines (groups of booleans, nullables or strings that together encode one state), check them for bugs with concrete failure scenarios, and triage each one (fix now, open an issue, or leave). Reports first; issues and fixes only on request. Use when the user asks to find implicit state machines, audit state handling, investigate flag soup or boolean explosion, or identify impossible or invalid state combinations.
 ---
 
 # Implicit state machines
@@ -20,12 +20,17 @@ user decides.
 
 - With paths: scan only those files or folders. Read callers and tests
   outside them only to check a bug or a hazard.
-- With no path: scan the whole repository. Skip generated, vendor and
-  build folders. First run a fast search (for example `rg`) to count
-  mutable fields, boolean or nullable fields, and state writes (such as
+- With no path: search the repository to select files for inspection.
+  Skip generated, vendor and build folders. Use a fast search (for
+  example `rg`) to count mutable fields, boolean or nullable fields,
+  and state writes (such as
   `setState` or field assignments) per file. Rank the files by count and
   scan the top 20 files, plus any file with 3 or more co-located boolean
   or nullable fields.
+
+This selection defines the scan scope. Module delegation uses the same
+selected files; it does not expand the scope. The 3-or-more-fields rule
+can select more than 20 files. Report the selected and inspected counts.
 
 Say in the report which scope you scanned, the candidate file count, and
 what you skipped.
@@ -59,14 +64,15 @@ until phase 4.
 
 First filter out orthogonal flags: count the total possible combinations
 of the fields and the valid domain states. When every combination is
-valid and writers change each field on its own (for example `muted`,
-`fullscreen` and `captionsEnabled`), the fields are independent, not a
-state machine. Skip them.
+valid and the fields control independent behavior (for example `muted`,
+`fullscreen` and `captionsEnabled`), skip them even if a shared reset
+writes them together.
 
-Keep groups where some combinations are invalid or where writes are
-coupled. For each candidate, record: `file:line`, the fields, the states
-they encode, the writers (count and lines), the readers (count), and the
-invalid combinations.
+Coupled writes are a signal to inspect, not proof of a state machine.
+Keep groups only when the fields encode a shared domain state or a
+domain rule makes some combinations invalid. For each candidate,
+record: `file:line`, the fields, the states they encode, the writers
+(count and lines), the readers (count), and the invalid combinations.
 
 Also list the state holders that are already explicit (enums, sealed
 types, state classes). The report names them in one line, so the reader
@@ -74,10 +80,11 @@ knows you checked them.
 
 ### Large scopes
 
-If the scope has more than about 30 source files or 10,000 lines, and
-subagents are available, split the scan by module. Tell each subagent to
-read [references/detection.md](references/detection.md), scan its
-module, note cross-file writers, and return this format for each
+If the selected scope has more than about 30 source files or 10,000
+lines, and subagents are available, split the selected files by module.
+Tell each subagent to read
+[references/detection.md](references/detection.md), scan its
+assigned files, note cross-file writers, and return this format for each
 candidate:
 
 ```text
@@ -105,8 +112,9 @@ Report a bug only with a scenario. Give each bug a confidence:
 - **Rare**: confirmed, but it needs an uncommon trigger. Name the
   trigger.
 
-For each bug, name the regression test that reproduces it, and the
-existing test helper it can use. Do not fix it in this phase.
+For each bug, name the proposed regression test and an existing test
+helper it can use. If no suitable helper exists, say so and identify
+the test file and setup the test needs. Do not fix it in this phase.
 
 List the rejected candidates in one line each: "checked, cannot happen
 because ...".
@@ -130,7 +138,10 @@ affects. An item that a hazard affects without a check is not Now.
 
 ### Triage
 
-Give each finding one verdict and a one-line reason:
+Give each state-machine refactor one verdict and a one-line reason.
+Track bug-fix eligibility separately: name any open decisions and
+required checks, and record whether the user has approved the fix.
+A bug fix can change behavior without making its related refactor Now.
 
 - **Now**: no behavior change, existing automated tests cover it, no
   non-CI run (device, manual or staging) is necessary, and no product
@@ -140,9 +151,16 @@ Give each finding one verdict and a one-line reason:
 - **Issue**: it needs a product or UX decision, touches a product rule,
   needs a non-CI or integration run, or is part of a larger refactor.
   Name the target issue (existing or new).
-- **Leave**: small and readable, the change costs more than it gains,
-  or strong tests cover it. Name the reason. You can propose
+- **Leave**: the current representation is small and readable, or the
+  change costs more than it gains. Name the reason. You can propose
   documentation, for example an ASCII state diagram.
+
+When Now and Leave both fit, choose Leave unless the refactor has a
+concrete benefit. Name that benefit for every Now item. Strong tests
+support a safe refactor; they do not decide whether it is worth doing.
+
+Documentation for Leave items is a separate suggestion and needs an
+explicit user request before it is written.
 
 Give each Now item a risk: low, medium or high.
 
@@ -164,7 +182,9 @@ are several (use `one-by-one` if available). Record each decision with
 its date.
 
 A decision can move a verdict, for example from Issue to Now. When it
-does, update the report and say what moved.
+does, recheck all Now criteria, update the report and say what moved.
+For bugs, record the decided behavior and remaining checks separately;
+resolving a decision does not itself approve implementation.
 
 ## Phase 4: Record (only on request)
 
@@ -189,20 +209,25 @@ again.
 
 Work in separate PRs, in this order:
 
-1. **Bug fixes without open decisions.** For each bug: write the
-   regression test, run it and see it fail, fix the code, see it pass.
+1. **Approved bug fixes without open decisions.** For each bug: write
+   the regression test, run it and see it fail, fix the code, see it pass.
 2. **Now items.** No behavior change. Existing tests must pass with no
    changes to their expectations. Update the test references that a
    hazard affects.
-3. **Bug fixes that needed a decision in phase 3.** Test-first, as in
-   step 1.
+3. **Approved bug fixes that needed a decision in phase 3.** Once the
+   decision is recorded and required checks are available, fix them
+   test-first, as in step 1. Their related refactors can remain Issue.
+4. **Documentation for Leave items**, only when explicitly requested.
+   Keep it separate from code changes.
 
 Run the project checks for each PR. Report each command and its result.
 Name each check that you could not run, and the reason (for example,
 no device or staging environment).
 
-Do not touch Issue or Leave items. Do not commit, push or open a PR
-without the user's request.
+Do not refactor Issue or Leave items. The approved bug fixes and
+explicitly requested documentation above are allowed independently of
+those refactor verdicts. Do not commit, push or open a PR without the
+user's request.
 
 ## Writing
 

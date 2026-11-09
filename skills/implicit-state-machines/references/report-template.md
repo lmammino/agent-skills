@@ -14,8 +14,8 @@ Give `file:line` for every location.
 
 ## 2. Scope
 
-What you scanned, the candidate file count, and what you skipped and
-why.
+What you scanned, the selected and inspected file counts, the candidate
+file count, and what you skipped and why.
 
 ## 3. Hazards
 
@@ -23,8 +23,8 @@ Each hazard, with counts and files, and the Now items it affects.
 
 ## 4. Bugs
 
-| ID | What happens (as the user sees it) | Where | Confidence | Regression test |
-|---|---|---|---|---|
+| ID | What happens (as the user sees it) | Where | Confidence | Regression test and setup | Open decisions, required checks, approval |
+|---|---|---|---|---|---|
 
 Then:
 
@@ -33,7 +33,7 @@ Then:
 
 ## 5. Now
 
-| ID | State machine and its states | Today | Proposal | State mapping | Risk |
+| ID | State machine and its states | Today | Proposal and concrete benefit | State mapping | Risk |
 |---|---|---|---|---|---|
 
 Then the edge cases to keep, one line each.

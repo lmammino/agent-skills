@@ -17,12 +17,14 @@ the content. Ask for any label or priority that the user did not name.
 <counts, and the main points as bullets>
 
 ## Bugs
-<bug table from the report: ID, what happens, where, confidence>
+<bug table from the report: ID, what happens, where, confidence,
+regression test and setup, open decisions, required checks, approval>
 <shared causes>
 <how to fix each one test-first>
 
 ## Explicit states with no behavior change
-<Now table: ID, state machine, today, proposal, state mapping>
+<Now table: ID, state machine, today, proposal and concrete benefit,
+state mapping, risk>
 <edge cases to keep>
 
 ## Follow-up work outside this issue
