@@ -14,7 +14,9 @@ bool gateOpen = false;
 bool gateShown = false; // (gateOpen: true, gateShown: true) is invalid
 ```
 
-Count the combinations. Name the invalid ones.
+Count the combinations and the valid states. Name the invalid ones.
+When all combinations are valid and independent, the booleans are
+orthogonal flags, not a state machine.
 
 ### Nullable as a state
 
@@ -80,12 +82,12 @@ state field, so the field resets to its default.
 
 ### Mirrored copies
 
-A screen that keeps `late` or local copies of values that another
-object owns. The copies can drift apart.
+A module or component that keeps cached or local copies of values that
+another object owns. The copies can drift apart.
 
 ### Boolean parameter for a mode
 
-A function or widget parameter `bool` that selects a mode, often next
+A function or component parameter `bool` that selects a mode, often next
 to a second boolean for the same mode (`adding` and `setup: !adding`).
 
 ## Flow signals
@@ -93,25 +95,38 @@ to a second boolean for the same mode (`adding` and `setup: !adding`).
 ### Writer without a guard
 
 A listener, callback or stream handler that writes state with no check
-of who owns the state now. Example: a player listener that changes the
-main screen state while a preview uses the player.
+of who owns the state now. Example: a shared client or player callback
+that changes the main screen state while a modal preview uses that
+resource.
 
 ### Two meanings of one condition
 
 Several guards for the same idea, each with a different check. Example:
-`previewSession != null` in some places and `!briefingLoaded` in
-others. Count the guards. A branch with no guard often hides a bug.
+`activeSession != null` in some places and `!isLoaded` in others. Count
+the guards. A branch with no guard often hides a bug.
 
 ### Paired clears
 
 Two or more fields that each writer must clear together. Count the
 places. A missing clear in one place is a bug.
 
+### Split transition across `await`
+
+A function that writes part of the state before an `await` and the rest
+after it (for example `loading = true; await fetch(); loading = false;
+data = result;`) with no guard against concurrent calls, cancellation or
+disposal in between.
+
+### Partial reset on error or cancel
+
+A `try` path that sets several state fields, paired with a `catch` or
+cancel path that resets only some of them and leaves the rest stale.
+
 ### Flag set in many places, cleared in few
 
 Count the writes that set the flag and the writes that clear it. Count
-the readers. A flag with 19 set writes, 1 clear and no doc comment has
-an unclear meaning.
+the readers. A flag set in many places and cleared in one, with no doc
+comment, often has an unclear meaning.
 
 ### Phase in local variables
 

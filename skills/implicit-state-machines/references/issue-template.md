@@ -22,7 +22,7 @@ the content. Ask for any label or priority that the user did not name.
 <how to fix each one test-first>
 
 ## Explicit states with no behavior change
-<Now table: ID, state machine, today, proposal>
+<Now table: ID, state machine, today, proposal, state mapping>
 <edge cases to keep>
 
 ## Follow-up work outside this issue
@@ -39,7 +39,7 @@ the content. Ask for any label or priority that the user did not name.
 
 ## Acceptance criteria
 - [ ] <one checkable item for each bug, each Now group and each record step>
-- [ ] <the project checks to run, and the device runs>
+- [ ] <the project checks to run, and any non-CI runs (device, manual or staging)>
 
 ## Decisions (<date>)
 <numbered decisions, each with its date>
@@ -71,7 +71,7 @@ Follows: #<main issue>
 <only the rules this change touches>
 
 ## Acceptance criteria
-- [ ] <checkable items, the checks to run, the device runs>
+- [ ] <checkable items, the checks to run, and any non-CI runs>
 
 ## Dependencies / related work
 <the main issue, and the work that must land first>

@@ -20,12 +20,15 @@ user decides.
 
 - With paths: scan only those files or folders. Read callers and tests
   outside them only to check a bug or a hazard.
-- With no path: scan the whole repository. First rank the source files
-  by state density: mutable fields, state writes (for example
-  `setState`, assignments to fields), and boolean or nullable fields.
-  Scan the densest files first. Skip generated, vendor and build folders.
+- With no path: scan the whole repository. Skip generated, vendor and
+  build folders. First run a fast search (for example `rg`) to count
+  mutable fields, boolean or nullable fields, and state writes (such as
+  `setState` or field assignments) per file. Rank the files by count and
+  scan the top 20 files, plus any file with 3 or more co-located boolean
+  or nullable fields.
 
-Say in the report which scope you scanned and what you skipped.
+Say in the report which scope you scanned, the candidate file count, and
+what you skipped.
 
 ## Phases
 
@@ -45,13 +48,24 @@ Read the project rules (AGENTS.md, CLAUDE.md, CONTRIBUTING.md, or
 similar). Follow their writing, ask-first and comment rules. When a
 proposal conflicts with a rule, turn the conflict into a question.
 
-Read `references/detection.md` for the signals to look for.
-Read `references/targets.md` for the target type in this language.
+Read [references/detection.md](references/detection.md) for the signals
+to look for.
+Read [references/targets.md](references/targets.md) for the target type
+in this language.
+Do not read [references/issue-template.md](references/issue-template.md)
+until phase 4.
 
 ### Find the candidates
 
-For each candidate, record: `file:line`, the fields, the states they
-encode, the writers (count and lines), the readers (count), and the
+First filter out orthogonal flags: count the total possible combinations
+of the fields and the valid domain states. When every combination is
+valid and writers change each field on its own (for example `muted`,
+`fullscreen` and `captionsEnabled`), the fields are independent, not a
+state machine. Skip them.
+
+Keep groups where some combinations are invalid or where writes are
+coupled. For each candidate, record: `file:line`, the fields, the states
+they encode, the writers (count and lines), the readers (count), and the
 invalid combinations.
 
 Also list the state holders that are already explicit (enums, sealed
@@ -60,9 +74,11 @@ knows you checked them.
 
 ### Large scopes
 
-If the scope has more than about 30 source files or 10,000 lines, split
-the scan by module. Give each subagent one module, the signal list from
-`references/detection.md`, and this output format for each candidate:
+If the scope has more than about 30 source files or 10,000 lines, and
+subagents are available, split the scan by module. Tell each subagent to
+read [references/detection.md](references/detection.md), scan its
+module, note cross-file writers, and return this format for each
+candidate:
 
 ```text
 file:line | fields | states it encodes | writers (count, lines) |
@@ -73,7 +89,7 @@ Subagents only find candidates. Run the bug check, the hazard check and
 the triage yourself, on the merged list. Read the code for every
 candidate that you report as a bug.
 
-Below the threshold, do the whole scan yourself.
+Below the threshold, or without subagents, do the whole scan yourself.
 
 ### Bug check (required)
 
@@ -96,7 +112,8 @@ List the rejected candidates in one line each: "checked, cannot happen
 because ...".
 
 Look for shared causes. Two bugs often come from one unclear meaning,
-for example two different checks for "who owns the player".
+for example two different checks for which session owns a shared
+resource.
 
 ### Hazard check (required)
 
@@ -104,7 +121,8 @@ Find what makes a rename or a type change unsafe:
 
 - dynamic, reflective or string-keyed access to state (tests included);
 - persisted or serialized names (stored keys, enum names or indexes);
-- tests that CI does not run (device, integration, manual);
+- checks that CI does not run (for example device, manual UI, staging or
+  hardware runs);
 - public API or native bridge names.
 
 For each hazard, give the count and the files. Name the Now items it
@@ -114,10 +132,13 @@ affects. An item that a hazard affects without a check is not Now.
 
 Give each finding one verdict and a one-line reason:
 
-- **Now**: no behavior change, existing tests cover it, no device or
-  integration run is necessary, and no product decision is open.
+- **Now**: no behavior change, existing automated tests cover it, no
+  non-CI run (device, manual or staging) is necessary, and no product
+  decision is open. Map every reachable field combination 1-to-1 to a
+  state in the target type, and confirm that every dropped combination
+  is unreachable.
 - **Issue**: it needs a product or UX decision, touches a product rule,
-  needs a device or integration run, or is part of a larger refactor.
+  needs a non-CI or integration run, or is part of a larger refactor.
   Name the target issue (existing or new).
 - **Leave**: small and readable, the change costs more than it gains,
   or strong tests cover it. Name the reason. You can propose
@@ -127,7 +148,8 @@ Give each Now item a risk: low, medium or high.
 
 ## Phase 2: Report
 
-Write the report in the chat. Use `references/report-template.md`.
+Write the report in the chat. Use
+[references/report-template.md](references/report-template.md).
 
 Then offer in one line to save it as a file. Write a file only when the
 user asks, or when the project rules name a place for audit reports.
@@ -137,7 +159,9 @@ End the report with the questions. Then stop.
 
 ## Phase 3: Decide
 
-Resolve each question with the user. Record each decision with its date.
+Resolve each question with the user, one question per turn when there
+are several (use `one-by-one` if available). Record each decision with
+its date.
 
 A decision can move a verdict, for example from Issue to Now. When it
 does, update the report and say what moved.
@@ -148,7 +172,8 @@ Before you write, read the repository's labels and one or two recent
 issues. Match their title prefix, sections and labels. Ask for any
 label or priority that the user did not name.
 
-1. **Main issue**: use `references/issue-template.md`.
+1. **Main issue**: use
+   [references/issue-template.md](references/issue-template.md).
 2. **Follow-up issues**: one for each Issue verdict with no existing
    target.
 3. **Umbrella comment**: when an existing issue covers a group of
@@ -174,7 +199,7 @@ Work in separate PRs, in this order:
 
 Run the project checks for each PR. Report each command and its result.
 Name each check that you could not run, and the reason (for example,
-no device).
+no device or staging environment).
 
 Do not touch Issue or Leave items. Do not commit, push or open a PR
 without the user's request.

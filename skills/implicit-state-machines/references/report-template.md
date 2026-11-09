@@ -14,7 +14,8 @@ Give `file:line` for every location.
 
 ## 2. Scope
 
-What you scanned, and what you skipped and why.
+What you scanned, the candidate file count, and what you skipped and
+why.
 
 ## 3. Hazards
 
@@ -32,8 +33,8 @@ Then:
 
 ## 5. Now
 
-| ID | State machine and its states | Today | Proposal | Risk |
-|---|---|---|---|---|
+| ID | State machine and its states | Today | Proposal | State mapping | Risk |
+|---|---|---|---|---|---|
 
 Then the edge cases to keep, one line each.
 
